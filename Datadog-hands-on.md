@@ -1,94 +1,86 @@
-**Datadog Administrator & Developer — Hands-On Interview Prep Tasks
-**
-Sign up for a free Datadog trial (14 days, no card needed for trial) before starting: https://www.datadoghq.com/free-datadog-trial/
+# Datadog Administrator & Developer — Hands-On Interview Prep
 
-Task 1: Install and Configure the Datadog Agent
 
-Objective: Prove you can deploy and troubleshoot the core agent — the most basic real-world admin task.
+## Task 1: Install and Configure the Datadog Agent
 
-Steps:
+**Objective:** Prove you can deploy and troubleshoot the core agent — the most basic real-world admin task.
 
-Spin up a Linux VM (can reuse your free-tier EC2 instance).
-Get your Datadog API key: Datadog UI → Organization Settings → API Keys.
-Install the agent:
+### Steps
+
+1. **Spin up a Linux VM** (reused a free-tier EC2 instance).
+2. **Get the Datadog API key**
+   Datadog UI → *Organization Settings* → *API Keys*.
+3. **Install the agent**
+
    DD_API_KEY=<your_key> DD_SITE="datadoghq.com" bash -c "$(curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh)"
-Verify it's running: sudo datadog-agent status
-Check the config file: sudo nano /etc/datadog-agent/datadog.yaml — note key settings like api_key, site, tags.
-Confirm the host shows up in Datadog UI → Infrastructure → Host Map within 1-2 minutes.
-Restart the agent and know the command: sudo systemctl restart datadog-agent
+ 
+4. **Verify it's running**
+  
+   sudo datadog-agent status
+ 
+5. **Check the config file**
+   
+   sudo nano /etc/datadog-agent/datadog.yaml
+  
+   Key settings to note: `api_key`, `site`, `tags`.
+6. **Confirm the host appears**
+   Datadog UI → *Infrastructure* → *Host Map* (usually visible within 1–2 minutes).
+7. **Know the restart command**
+  
+   sudo systemctl restart datadog-agent
+ 
 
-Likely interview question: "How do you troubleshoot an agent that isn't reporting?" → Know: check datadog-agent status, check /var/log/datadog/agent.log, verify API key/network connectivity/proxy settings.
+**Likely interview question:**
+> "How do you troubleshoot an agent that isn't reporting?"
+
+**Answer:** Check `datadog-agent status`, check `/var/log/datadog/agent.log`, verify API key, network connectivity, and proxy settings.
+
+---
+
+### Session Log — Connecting and Installing on EC2
 
 
-Last login: Fri Jul 31 02:21:18 on ttys000
-Apple@MacBook-Pro ~ % ls       
-AWSCLIV2.pkg	Desktop		Documents	Downloads	Library		Movies		Music		Pictures
-Apple@MacBook-Pro ~ % chmod 400 Downloads/datadog-key.pem 
+Apple@MacBook-Pro ~ % ls
+AWSCLIV2.pkg  Desktop  Documents  Downloads  Library  Movies  Music  Pictures
+
+Apple@MacBook-Pro ~ % chmod 400 Downloads/datadog-key.pem
+
 Apple@MacBook-Pro ~ % ssh -i Downloads/datadog-key.pem ec2-user@54.167.88.46
 The authenticity of host '54.167.88.46 (54.167.88.46)' can't be established.
 ED25519 key fingerprint is: SHA256:bSkABoZeYoB6Nj+nrvp1jTZtaHRPYweMtzLUU/H+npU
-This key is not known by any other names.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
 Warning: Permanently added '54.167.88.46' (ED25519) to the list of known hosts.
-   ,     #_
-   ~\_  ####_        Amazon Linux 2023
-  ~~  \_#####\
-  ~~     \###|
-  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
-   ~~       V~' '->
-    ~~~         /
-      ~~._.   _/
-         _/ _/
-       _/
 
+   Amazon Linux 2023
+   https://aws.amazon.com/linux/amazon-linux-2023/
 
-/home/ec2-user
-[ec2-user@ip-172-31-26-192 ~]$ DD_API_KEY=092b5c8f1a888888115 DD_SITE="datadoghq.com" bash -c "$(curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh)"
+[ec2-user@ip-172-31-26-192 ~]$ DD_API_KEY=<redacted> DD_SITE="datadoghq.com" bash -c "$(curl -L https://install.datadoghq.com/scripts/install_script_agent7.sh)"
+```
 
+> **Note:** API key redacted here for security — never commit real API keys to a public GitHub repo. Consider rotating this key if it was ever pasted somewhere shareable.
 
+---
 
+## Task 2: Troubleshooting Datadog Agent Failures
 
-Troubleshooting steps for Datadog agent failures
+A methodical, layered approach — from the agent, down to the OS, down to the network. This is the exact flow interviewers want described when they ask "walk me through debugging a silent agent."
 
-Check overall agent status
-Run: sudo datadog-agent status — this is your first stop. It shows whether the agent process is running, whether the API key is valid, which checks are OK/failing, and any component-level errors (you already saw this output).
-2
-Check the service status at the OS level
-Run: sudo systemctl status datadog-agent — shows whether the underlying service is active, stopped, or crashing/restarting repeatedly. Look for 'active (running)' vs 'failed' or 'inactive'.
-3
-Read the recent log lines
-Run: sudo tail -100 /var/log/datadog/agent.log — shows the last 100 lines of the main log, where startup errors, connection failures, or config parsing errors usually show up first.
+| Step | Command | What it tells you |
+|---|---|---|
+| 1. Check overall agent status | `sudo datadog-agent status` | Whether the agent process is running, API key validity, per-check health |
+| 2. Check the OS-level service | `sudo systemctl status datadog-agent` | Whether the service is `active (running)`, `failed`, or restarting in a crash loop |
+| 3. Read recent log lines | `sudo tail -100 /var/log/datadog/agent.log` | Startup errors, connection failures, config parsing issues |
+| 4. Watch logs live | `sudo tail -f /var/log/datadog/agent.log` | Real-time view — pair with a restart to catch errors as they happen |
+| 5. Restart the agent | `sudo systemctl restart datadog-agent` | Resets the service; run while step 4 is active in a second terminal |
+| 6. Validate configuration | `sudo datadog-agent configcheck` | Flags YAML syntax errors or misconfigured checks in `datadog.yaml` / `conf.d` |
+| 7. Run built-in diagnostics | `sudo datadog-agent diagnose` | Full self-check: connectivity, API key, port availability, pass/fail summary |
+| 8. Test raw network connectivity | `curl -v https://app.datadoghq.com` | Confirms the instance can reach Datadog's servers — rules out agent vs. network issue |
 
+**Recommended troubleshooting order:**
+`status → service status → logs → configcheck → diagnose → network test`
 
-4
-Watch the log live while restarting
-Run: sudo tail -f /var/log/datadog/agent.log — keeps the log open and streaming live. Useful if you want to restart the agent and watch exactly what happens in real time.
-5
-Restart the agent
-Run: sudo systemctl restart datadog-agent — restarts the agent service. Do this while step 4's tail -f is running in a second terminal/tab so you catch any errors during startup.
-6
-Validate your configuration files
-Run: sudo datadog-agent configcheck — validates your YAML config files (datadog.yaml and everything in conf.d) and flags syntax errors or misconfigured checks before they even try to run.
+---
 
+## Summary
 
-
-7
-Run the built-in diagnostic tool
-Run: sudo datadog-agent diagnose — runs Datadog's built-in self-diagnostic suite: checks connectivity to Datadog's servers, verifies the API key, checks port availability, and more, all in one command with pass/fail output.
-8
-Test raw network connectivity to Datadog
-Run: curl -v https://app.datadoghq.com — confirms your instance can actually reach Datadog's servers over the network. If this hangs or fails, it's a security group / firewall / DNS issue, not an agent problem.
-
-Task 2: Enable an Integration (e.g., AWS or NGINX)
-
-Objective: Show you understand integrations, which is core to "administrator" work.
-
-Steps:
-
-Datadog UI → Integrations → search "Amazon Web Services" → click it.
-Follow the IAM role setup: create an IAM policy with Datadog's required read-only permissions, create a role, and add Datadog's AWS account ID as trusted.
-Paste the Role ARN into Datadog's AWS integration tile.
-Alternatively (simpler, faster for practice): install the NGINX integration on your Linux VM — enables the nginx check in /etc/datadog-agent/conf.d/nginx.d/conf.yaml.example, rename to conf.yaml, restart agent.
-Confirm metrics start flowing: Datadog UI → Metrics → Explorer → search nginx.net.request_per_s (or aws.ec2.cpuutilization if you did AWS).
-
-Likely interview question: "Difference between agent-based and API-based (crawler) integrations?" → Agent-based needs the Datadog Agent installed on the host; API-based (like AWS) polls cloud provider APIs directly, no agent needed on each resources
+This session covered the full lifecycle of a single task: **provisioning → installing → verifying → troubleshooting** — the exact narrative arc to walk an interviewer through when demonstrating hands-on Datadog Administrator/Developer experience.
