@@ -1,4 +1,4 @@
-# Datadog Administrator & Developer — Hands-On Interview Prep
+# Datadog Administrator & Developer — Hands-On 
 
 
 ## Task 1: Install and Configure the Datadog Agent
