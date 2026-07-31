@@ -1,5 +1,5 @@
-Datadog Administrator & Developer — Hands-On Interview Prep Tasks
-
+**Datadog Administrator & Developer — Hands-On Interview Prep Tasks
+**
 Sign up for a free Datadog trial (14 days, no card needed for trial) before starting: https://www.datadoghq.com/free-datadog-trial/
 
 Task 1: Install and Configure the Datadog Agent
